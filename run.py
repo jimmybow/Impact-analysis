@@ -21,7 +21,7 @@ import math
 import colorlover as cl
 import visdcc
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')    ### heroku 無安裝 Tkinter  因此改成無圖片互動模式
 import matplotlib.pyplot as plt
 
 ### 匯入資料
