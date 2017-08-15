@@ -20,6 +20,8 @@ import time
 import math
 import colorlover as cl
 import visdcc
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 ### 匯入資料
