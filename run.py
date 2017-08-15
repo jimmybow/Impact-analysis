@@ -106,7 +106,9 @@ glo['idd'] = ''
 ###
 
 server = Flask(__name__)
+server.secret_key = os.environ.get('secret_key', 'secret')
 app = dash.Dash(name = __name__, server = server)
+app.config.supress_callback_exceptions = True
 
 app.layout = html.Div([
       html.Br(),
@@ -329,8 +331,3 @@ def myfun(d, sel, mode):
             table = pd.Series(glo['idd'])[ww].str.replace('--[a-zA-Z]*','').value_counts().rank(ascending = False).astype(int).reset_index()
             table.columns = ['Factor', 'Rank']        
     return generate_table(table)
-    
-if __name__ == '__main__':
-    webbrowser.open('http://127.0.0.1:5000/', new=0, autoraise=True) 
-    server.run(debug=True, use_reloader=False)
-    
