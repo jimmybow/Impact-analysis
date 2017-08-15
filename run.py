@@ -50,7 +50,7 @@ l1, = plt.plot(0, 0, color='blue', linewidth = 5.0, label='color : Freq')
 l2, = plt.plot(0, 0, color='black', linewidth = 10.0, label='width : Freq')
 ld = plt.legend(loc='center',prop={'size':40})
 ld.get_frame().set_edgecolor('black')
-plt.savefig(os.path.join(STATIC_PATH, 'legend.jpeg'))
+plt.savefig(os.path.join(STATIC_PATH, 'legend.png'))
 
 ### 時間軸參數
 mint = time.strptime(df_r.time[0], "%Y-%m-%d %H:%M:%S")
@@ -149,7 +149,7 @@ app.layout = html.Div([
                      selection = {'nodes':[], 'edges':[]},
                      style = {'display':'inline-block', 'height':'600px', 'width':'65%', 'padding':'20px', 'vertical-align':'top'}),
       html.Div([
-      html.Img(src='/static/legend.jpeg', style={'width': '300px'}), html.Br(), 
+      html.Img(src='/static/legend.png', style={'width': '300px'}), html.Br(), 
       html.B('可能影響的事件：', 
              style={'font-size':20, 'display':'inline-block', 'padding':'20px', 'margin-right':'15px', 'width': '170px'} ),
       html.B('可能的異常因子：', 
