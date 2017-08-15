@@ -24,13 +24,12 @@ import visdcc
 import matplotlib.pyplot as plt
 
 ### 匯入資料
-floder = "C:\\Users\\jimmybow\\OneDrive\\Program\\Python\\dash\\BT log\\"
-df_r = pd.read_csv(floder + 'df_r.csv')
-aim = pd.read_csv(floder + 'aim.csv').x
-freq = pd.read_csv(floder +'freq.csv',  header = None)[0]
-g = pd.read_csv(floder +'g.csv', header = None)[0]
-result = pd.read_csv(floder +'result.csv')
-timetable = pd.read_csv(floder +'timetable.csv')
+df_r = pd.read_csv('df_r.csv')
+aim = pd.read_csv('aim.csv').x
+freq = pd.read_csv('freq.csv',  header = None)[0]
+g = pd.read_csv('g.csv', header = None)[0]
+result = pd.read_csv('result.csv')
+timetable = pd.read_csv('timetable.csv')
 
 ### 靜態文件位置
 STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'static')
