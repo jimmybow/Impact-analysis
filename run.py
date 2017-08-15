@@ -15,7 +15,6 @@ import flask
 from flask import Flask
 from dfply import *
 import os
-import sys
 import time
 import math
 import colorlover as cl
