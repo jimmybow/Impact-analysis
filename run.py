@@ -32,8 +32,9 @@ g = pd.read_csv('g.csv', header = None)[0]
 result = pd.read_csv('result.csv')
 timetable = pd.read_csv('timetable.csv')
 
-### 靜態文件位置
-STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+### 靜態文件位置        正式佈署時 file = __file__
+file = __file__
+STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(file)), 'static')
 
 ### 圖片
 plt.figure(figsize = (7, 3))
