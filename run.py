@@ -269,19 +269,30 @@ def myfun(x, mode, select):
     glo['ddf']['smooth'] = [{ 'enabled' : False } for i in range(nn)]
     
     if len(select['nodes']) > 0 : 
+        gid = list(glo['ddf'].id)
         sel_aim = select['nodes'][0]        
         if mode == 'impact':       
             ww3 = result.rhs[glo['kk']].str.contains(sel_aim + '_')
             st = result.rhs[glo['kk']][ww3].str.replace('[a-zA-Z_]*_' + sel_aim , sel_aim).str.split('_')
             cgc = '#FF8040'
+            idd = []
+            for i in range(len(st)):
+                nni = len(st.iloc[i])
+                for j in range(1, nni):
+                    v = st.iloc[i][j-1] + '--' + st.iloc[i][j]
+                    if not v in gid : break     # 順方向接鍊子 鍊子斷了就停止
+                    else : idd.append(v)   
         else :
             ww3 = result.rhs[glo['kk']].str.contains('_' + sel_aim)
             st = result.rhs[glo['kk']][ww3].str.replace(sel_aim + '_[a-zA-Z_]*', sel_aim).str.split('_')
             cgc = '#00DB00'
-        idd = []
-        for i in range(len(st)):
-            for j in range(1, len(st.iloc[i])):
-                idd.append(st.iloc[i][j-1] + '--' + st.iloc[i][j])     
+            idd = []
+            for i in range(len(st)):
+                nni = len(st.iloc[i])
+                for j in range(nni-1, 0, -1):
+                    v = st.iloc[i][j-1] + '--' + st.iloc[i][j]
+                    if not v in gid : break      # 反方向接鍊子 鍊子斷了就停止
+                    else : idd.append(v)   
         glo['idd'] = idd
            
         ww = glo['ddf'].id.isin(idd)
@@ -313,11 +324,9 @@ def myfun(x, mode, select):
              State('choose-mode', 'value')])
 def myfun(d, sel, mode):
     table = pd.DataFrame(columns = ['Impack', 'Rank'])
-    if mode == 'impact' and len(sel['nodes']) > 0:
-        ww = pd.Series(glo['idd']).isin(glo['ddf'].id)
-        if ww.sum() > 0 :
-            table = pd.Series(glo['idd'])[ww].str.replace('[a-zA-Z]*--','').value_counts().rank(ascending = False).astype(int).reset_index()
-            table.columns = ['Impack', 'Rank']        
+    if mode == 'impact' and len(sel['nodes']) > 0 and len(glo['idd']) > 0 :
+        table = pd.Series(glo['idd']).str.replace('[a-zA-Z]*--','').value_counts().rank(ascending = False).astype(int).reset_index()
+        table.columns = ['Impack', 'Rank']        
     return generate_table(table)
 
 @app.callback(
@@ -327,9 +336,7 @@ def myfun(d, sel, mode):
              State('choose-mode', 'value')])
 def myfun(d, sel, mode):
     table = pd.DataFrame(columns = ['Factor', 'Rank'])
-    if mode == 'factor' and len(sel['nodes']) > 0:
-        ww = pd.Series(glo['idd']).isin(glo['ddf'].id)
-        if ww.sum() > 0 :
-            table = pd.Series(glo['idd'])[ww].str.replace('--[a-zA-Z]*','').value_counts().rank(ascending = False).astype(int).reset_index()
-            table.columns = ['Factor', 'Rank']        
+    if mode == 'factor' and len(sel['nodes']) > 0 and len(glo['idd']) :
+        table = pd.Series(glo['idd']).str.replace('--[a-zA-Z]*','').value_counts().rank(ascending = False).astype(int).reset_index()
+        table.columns = ['Factor', 'Rank']        
     return generate_table(table)
