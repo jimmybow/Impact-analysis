@@ -34,7 +34,7 @@ timetable = pd.read_csv('timetable.csv')
 ### 靜態文件位置        正式佈署時 file = __file__
 file = __file__
 STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(file)), 'static')
-
+if not os.path.exists(STATIC_PATH): os.mkdir(STATIC_PATH)
 ### 圖片
 plt.figure(figsize = (7, 3))
 ps = plt.subplot(111)
