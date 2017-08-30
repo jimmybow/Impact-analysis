@@ -14,6 +14,7 @@ from dash.dependencies import Input, Output, Event, State
 import flask
 from flask import Flask
 from dfply import *
+import json
 import os
 import time
 import math
@@ -22,6 +23,7 @@ import visdcc
 import matplotlib
 matplotlib.use('Agg')    ### heroku 無安裝 Tkinter  因此改成無圖片互動模式
 import matplotlib.pyplot as plt
+
 
 ### 匯入資料
 df_r = pd.read_csv('df_r.csv')
@@ -34,7 +36,6 @@ timetable = pd.read_csv('timetable.csv')
 ### 靜態文件位置        正式佈署時 file = __file__
 file = __file__
 STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(file)), 'static')
-if not os.path.exists(STATIC_PATH): os.mkdir(STATIC_PATH)
 
 ### 圖片
 plt.figure(figsize = (7, 3))
@@ -103,9 +104,7 @@ data['edges'] = []
 
 ### 全域
 glo = {}
-glo['time-slider'] = [] 
-glo['ddf'] = 'null'   
-glo['idd'] = ''   
+glo['time-slider'] = []  
 ###
 
 server = Flask(__name__)
@@ -114,6 +113,7 @@ app = dash.Dash(name = __name__, server = server)
 app.config.supress_callback_exceptions = True
 
 app.layout = html.Div([
+      html.Div(id = 'glo', style = {'display':'none'}),  
       html.Br(),
       html.B('圖形展示', style={'font-size':20, 'display':'inline-block', 'padding': '0px 0px 0px 20px', 'width' : '15%'} ),
       html.B(style={'display':'inline-block', 'padding': '0px 0px 0px 20px', 'width' : '15%'} ),      
@@ -150,17 +150,17 @@ app.layout = html.Div([
                      selection = {'nodes':[], 'edges':[]},
                      style = {'display':'inline-block', 'height':'600px', 'width':'65%', 'padding':'20px', 'vertical-align':'top'}),
       html.Div([
-      html.Img(src='/static/legend.png', style={'width': '300px'}), html.Br(), 
-      html.B('可能影響的事件：', 
-             style={'font-size':20, 'display':'inline-block', 'padding':'20px', 'margin-right':'15px', 'width': '170px'} ),
-      html.B('可能的異常因子：', 
-             style={'font-size':20, 'display':'inline-block', 'padding':'20px', 'width': '170px'} ), html.Br(),               
-      html.Div(id = 'impact',
-               style = {'background-color':'rgb(255, 239, 225)', 'padding':'20px', 'width': '170px',
-                        'vertical-align':'top', 'margin-right':'15px', 'display':'inline-block'}),
-      html.Div(id = 'factor',
-               style = {'background-color':'rgb(240, 255, 225)', 'padding':'20px', 'width': '170px',
-                        'vertical-align':'top', 'display':'inline-block'}),        
+          html.Img(src='/static/legend.png', style={'width': '300px'}), html.Br(), 
+          html.B('可能影響的事件：', 
+                 style={'font-size':20, 'display':'inline-block', 'padding':'20px', 'margin-right':'15px', 'width': '170px'} ),
+          html.B('可能的異常因子：', 
+                 style={'font-size':20, 'display':'inline-block', 'padding':'20px', 'width': '170px'} ), html.Br(),               
+          html.Div(id = 'impact',
+                   style = {'background-color':'rgb(255, 239, 225)', 'padding':'20px', 'width': '170px',
+                            'vertical-align':'top', 'margin-right':'15px', 'display':'inline-block'}),
+          html.Div(id = 'factor',
+                   style = {'background-color':'rgb(240, 255, 225)', 'padding':'20px', 'width': '170px',
+                            'vertical-align':'top', 'display':'inline-block'}),        
       ], style = {'display':'inline-block', 'text-align': 'center'})             
 ])
 
@@ -203,11 +203,13 @@ def myfun(x):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(x[0])) + ' 至 ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(x[1])) 
 
 @app.callback(
-    Output('net', 'data'),
+    Output('glo', 'children'),
     [Input('time-slider', 'value'),
      Input('choose-mode', 'value'),
-     Input('net', 'selection')])     
-def myfun(x, mode, select):    
+     Input('net', 'selection')],
+    state = [State('glo', 'children')])     
+def myfun(x, mode, select, ggg):    
+    ddf = 'null'
     if x != glo['time-slider']:    
         glo['time-slider'] = x
         s_value = x[0]
@@ -222,7 +224,6 @@ def myfun(x, mode, select):
         ww = [i for i in range(s, e + 1)]
         kk = result.lhs.isin(timetable.time[ww])
         glo['kk'] = kk
-        glo['ddf'] = 'null'
         glo['node_color'] = [cg[0]  for i in range(len(g))]     
         if kk.sum() > 0 :
             st = result.rhs[kk].str.split('_')
@@ -259,24 +260,24 @@ def myfun(x, mode, select):
             
             ddf['width'] = [max(min(ddf.FFreq.iloc[i]*0.0001, 5), 1) for i in range(len(ddf))]
             ddf['selectionWidth'] = 0  
-            glo['ddf'] = ddf  
     
     nc = list(glo['node_color'])
     # 選擇互動            
-    nn = len(glo['ddf'])
-    glo['ddf']['color'] = [ cc[min(math.ceil(glo['ddf'].FFreq.iloc[i]*0.01), 199)]    for i in range(nn)]
-    glo['ddf']['hidden'] = False   
-    glo['ddf']['arrows'] = [{'to':{'enabled': False} }  for i in range(nn)]
-    glo['ddf']['smooth'] = [{ 'enabled' : False } for i in range(nn)]
+    if type(ddf) == str: ddf = pd.DataFrame(json.loads(json.loads(ggg)['ddf']))
+    nn = len(ddf)
+    ddf['color'] = [ cc[min(math.ceil(ddf.FFreq.iloc[i]*0.01), 199)]    for i in range(nn)]
+    ddf['hidden'] = False   
+    ddf['arrows'] = [{'to':{'enabled': False} }  for i in range(nn)]
+    ddf['smooth'] = [{ 'enabled' : False } for i in range(nn)]
+    idd = []
     
     if len(select['nodes']) > 0 : 
-        gid = list(glo['ddf'].id)
+        gid = list(ddf.id)
         sel_aim = select['nodes'][0]        
         if mode == 'impact':       
             ww3 = result.rhs[glo['kk']].str.contains(sel_aim + '_')
             st = result.rhs[glo['kk']][ww3].str.replace('[a-zA-Z_]*_' + sel_aim , sel_aim).str.split('_')
             cgc = '#FF8040'
-            idd = []
             for i in range(len(st)):
                 nni = len(st.iloc[i])
                 for j in range(1, nni):
@@ -287,57 +288,63 @@ def myfun(x, mode, select):
             ww3 = result.rhs[glo['kk']].str.contains('_' + sel_aim)
             st = result.rhs[glo['kk']][ww3].str.replace(sel_aim + '_[a-zA-Z_]*', sel_aim).str.split('_')
             cgc = '#00DB00'
-            idd = []
             for i in range(len(st)):
                 nni = len(st.iloc[i])
                 for j in range(nni-1, 0, -1):
                     v = st.iloc[i][j-1] + '--' + st.iloc[i][j]
                     if not v in gid : break      # 反方向接鍊子 鍊子斷了就停止
                     else : idd.append(v)   
-        glo['idd'] = idd
            
-        ww = glo['ddf'].id.isin(idd)
-        glo['ddf']['color'][ww] = cgc   # 邊的顏色
-        glo['ddf']['hidden'][~ww] = True
-        glo['ddf']['arrows'][ww] = [{'to':{'enabled': True} }  for i in range(ww.sum())] 
+        ww = ddf.id.isin(idd)
+        ddf['color'][ww] = cgc   # 邊的顏色
+        ddf['hidden'][~ww] = True
+        ddf['arrows'][ww] = [{'to':{'enabled': True} }  for i in range(ww.sum())] 
            
         # 點的顏色   glo['node_color']
-        nid = glo['ddf'].id[ww].tolist()
+        nid = ddf.id[ww].tolist()
         non = pd.Series('--'.join(nid).split('--')).unique()
         for i in range(len(g)):    
             if data['nodes'][i]['id'] in non : nc[i]= cgc     
             if data['nodes'][i]['id'] == select['nodes'][0] : nc[i]= 'red'      
         
-    data['edges'] = glo['ddf'].to_dict('records')    
+    data['edges'] = ddf.to_dict('records')    
     for i in range(nn):
         if len(select['nodes']) == 0 and len(select['edges']) > 0 and select['edges'][0] == data['edges'][i]['id'] :
             data['edges'][i]['color'] = 'red'  
             
     # 點的顏色設置
     for i in range(len(g)): data['nodes'][i]['color'] = nc[i] 
-        
-    return data
+    
+    return json.dumps({'data': data, 'idd': idd, 'ddf': ddf.to_json() })
+
+@app.callback(
+    Output('net', 'data'),
+    [Input('glo', 'children')])
+def myfun(d):
+    return json.loads(d)['data']
 
 @app.callback(
     Output('impact', 'children'),
-    [Input('net', 'data')],
+    [Input('glo', 'children')],
     state = [State('net', 'selection'),
              State('choose-mode', 'value')])
 def myfun(d, sel, mode):
+    idd = json.loads(d)['idd']
     table = pd.DataFrame(columns = ['Impack', 'Rank'])
-    if mode == 'impact' and len(sel['nodes']) > 0 and len(glo['idd']) > 0 :
-        table = pd.Series(glo['idd']).str.replace('[a-zA-Z]*--','').value_counts().rank(ascending = False).astype(int).reset_index()
+    if mode == 'impact' and len(sel['nodes']) > 0 and len(idd) > 0 :
+        table = pd.Series(idd).str.replace('[a-zA-Z]*--','').value_counts().rank(ascending = False).astype(int).reset_index()
         table.columns = ['Impack', 'Rank']        
     return generate_table(table)
 
 @app.callback(
     Output('factor', 'children'),
-    [Input('net', 'data')],
+    [Input('glo', 'children')],
     state = [State('net', 'selection'),
              State('choose-mode', 'value')])
 def myfun(d, sel, mode):
+    idd = json.loads(d)['idd']
     table = pd.DataFrame(columns = ['Factor', 'Rank'])
-    if mode == 'factor' and len(sel['nodes']) > 0 and len(glo['idd']) :
-        table = pd.Series(glo['idd']).str.replace('--[a-zA-Z]*','').value_counts().rank(ascending = False).astype(int).reset_index()
+    if mode == 'factor' and len(sel['nodes']) > 0 and len(idd) > 0 :
+        table = pd.Series(idd).str.replace('--[a-zA-Z]*','').value_counts().rank(ascending = False).astype(int).reset_index()
         table.columns = ['Factor', 'Rank']        
     return generate_table(table)
